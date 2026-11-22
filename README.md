@@ -21,7 +21,7 @@ This series rebuilds the smallest honest version of each of those pieces on top 
 | --- | --- |
 | [PRD](docs/PRD.md) | The product: problem, users, the 8 requirements with acceptance tests, product screens, success metrics, release plan |
 | [TRD](docs/TRD.md) | The build: processes and ports, the request flow, API, SQLite schema, audit format, security design, policy engine, budgets, reliability, tests |
-| [Prototype](prototype/) | Five clickable screens: developer session, phone approvals, admin dashboard, admin console, audit log. Open `prototype/index.html` locally |
+| [Prototype](prototype/) | Five clickable screens: developer session, phone approvals, admin dashboard, admin console, audit log. **[Try it live](https://haiyang8625coder.github.io/build-an-enterprise-class-agent/prototype/)** |
 
 ![Product architecture: the engine runs sandboxed; the key, budget and log stay outside](docs/images/prd-architecture.png)
 

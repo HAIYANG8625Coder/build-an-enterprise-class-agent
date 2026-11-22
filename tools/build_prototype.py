@@ -82,7 +82,7 @@ footer a{{color:#E39A7E}}
 <h1>agentd</h1>
 <p class="lead">The clickable prototype of the enterprise agent service, version 1.0, approved 2026-11-22. Every number is sample data, not a real run.</p>
 {items}
-<footer>Read the <a href="../docs/PRD.md">PRD</a> and the <a href="../docs/TRD.md">TRD</a>. Built from <code>src/</code> by <code>tools/build_prototype.py</code>.</footer>
+<footer>Read the <a href="https://github.com/HAIYANG8625Coder/build-an-enterprise-class-agent/blob/main/docs/PRD.md">PRD</a> and the <a href="https://github.com/HAIYANG8625Coder/build-an-enterprise-class-agent/blob/main/docs/TRD.md">TRD</a>. Built from <code>src/</code> by <code>tools/build_prototype.py</code>.</footer>
 </main>
 </body>
 </html>

@@ -4,7 +4,9 @@ Clickable screens for **agentd**, the enterprise agent service in the [PRD](../d
 
 ## Open it
 
-Download or clone the repo and open `prototype/index.html` in a browser. Nothing needs to be installed. The pages load the IBM Plex fonts from Google Fonts, and fall back to system fonts when offline.
+**Live:** [https://haiyang8625coder.github.io/build-an-enterprise-class-agent/prototype/](https://haiyang8625coder.github.io/build-an-enterprise-class-agent/prototype/)
+
+Or download the repo and open `prototype/index.html` in a browser. Nothing needs to be installed. The pages load the IBM Plex fonts from Google Fonts, and fall back to system fonts when offline.
 
 | Screen | Page | Try this |
 | --- | --- | --- |
@@ -13,8 +15,6 @@ Download or clone the repo and open `prototype/index.html` in a browser. Nothing
 | Admin dashboard | [`dashboard.html`](dashboard.html) | Switch between Today and Last 7 days |
 | Admin console | [`admin.html`](admin.html) | Turn on "Company rules only", then publish v8; revoke a token |
 | Audit log | [`audit.html`](audit.html) | Edit line 1,281, then verify the chain |
-
-GitHub shows `.html` files as source code. To click through the screens, open them locally.
 
 ## How it is built
 
