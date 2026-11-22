@@ -4,10 +4,10 @@
 
 **Series 2 of "Build your own agent": what changes when many people use one agent.**
 
-Status: **planning**. Nothing is built or tested yet. The plan below is a draft and will change.
+Status: **design approved (v1.0, 2026-11-22)**. The PRD, the TRD and a clickable prototype are done. No service code is built yet; Phase 0 is next.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Status: planning](https://img.shields.io/badge/status-planning-yellow)
+![Status: design approved](https://img.shields.io/badge/status-design%20approved%20v1.0-green)
 
 </div>
 
@@ -15,13 +15,23 @@ Status: **planning**. Nothing is built or tested yet. The plan below is a draft 
 
 This series rebuilds the smallest honest version of each of those pieces on top of the finished series 1 agent, tests it with real runs, and compares it with what the official Claude Code docs say Claude Code does.
 
+## Design documents (v1.0)
+
+| Document | What it holds |
+| --- | --- |
+| [PRD](docs/PRD.md) | The product: problem, users, the 8 requirements with acceptance tests, product screens, success metrics, release plan |
+| [TRD](docs/TRD.md) | The build: processes and ports, the request flow, API, SQLite schema, audit format, security design, policy engine, budgets, reliability, tests |
+| [Prototype](prototype/) | Five clickable screens: developer session, phone approvals, admin dashboard, admin console, audit log. Open `prototype/index.html` locally |
+
+![Product architecture: the engine runs sandboxed; the key, budget and log stay outside](docs/images/prd-architecture.png)
+
 ## How it will work
 
 - **Same method as series 1.** Plain Python, no framework. Keys only in environment variables. One folder and one commit per episode. Every run on screen is real, including the ones that show nothing.
 - **Claude Code facts come from its official documentation**, never from its source code. Where the docs are silent, the article says "our version does it this way".
 - **Teaching versions, not products.** We build small versions of managed settings, sandboxing, audit logs and so on, and say where they stop. This is not legal advice, a compliance certification, or something to sell as is.
 
-## The plan (draft: 5 parts, 13 episodes)
+## The plan (5 parts, 13 episodes)
 
 ### A · Who and what is allowed
 1. **Many users, one agent service.** Know who is asking: a user id on every request, a working folder and a session store for each user.

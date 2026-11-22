@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin dashboard · agentd prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#262624}
+a{color:#E39A7E}a:hover{color:#F0B9A3}
+.nav{display:block;padding:10px 12px;border-radius:6px;color:#C9C6BA;text-decoration:none;font-size:14px}
+.nav:hover{background:#30302E;color:#E8E6DC}
+.nav:focus-visible,.seg:focus-visible,.att:focus-visible{outline:2px solid #E39A7E;outline-offset:2px}
+.card{border:1px solid #3E3D39;border-radius:10px;padding:18px 20px}
+.h2{font-size:16px;font-weight:600;margin:0 0 4px}
+.note{color:#A19F94;font-size:13px;margin:0 0 16px}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.seg{min-height:36px;padding:0 16px;border:0;background:none;color:#C9C6BA;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;border-radius:7px}
+.seg:hover{color:#E8E6DC}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;color:#A19F94;font-size:12.5px;padding:8px 14px 8px 0;border-bottom:1px solid #3E3D39;white-space:nowrap}
+td{padding:11px 14px 11px 0;border-bottom:1px solid #34332F;vertical-align:middle}
+.att{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:8px;text-decoration:none;color:#E8E6DC;background:#2C2B29;border:1px solid #3E3D39;min-height:44px;box-sizing:border-box}
+.att:hover{background:#30302E;color:#E8E6DC}
+.row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid #34332F;font-size:13.5px}
+</style>
+<style>
+body{background:#1F1E1C}
+.dc-back{position:fixed;right:16px;bottom:16px;padding:8px 14px;border-radius:999px;background:#30302E;border:1px solid #4A4943;color:#E8E6DC;font:500 13px 'IBM Plex Sans',system-ui,sans-serif;text-decoration:none}
+.dc-back:hover{background:#3A3935;color:#E8E6DC}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<a class="dc-back" href="index.html">All screens</a>
+<script type="text/x-template" id="dc-template"><div style="min-height: 1180px; background: #262624; color: #E8E6DC; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; display: flex; flex-wrap: wrap">
+
+  <nav aria-label="Admin" style="flex: 1 1 200px; max-width: 232px; padding: 20px 14px; border-right: 1px solid #3E3D39; box-sizing: border-box">
+    <div style="padding: 0 12px 18px; font-family: 'IBM Plex Mono', monospace"><span style="font-weight: 600; color: #E39A7E; font-size: 16px">agentd</span><span style="color: #A19F94; font-size: 13px"> admin</span></div>
+    <a class="nav" href="#top" style="background: #30302E; color: #E8E6DC">Dashboard</a>
+    <a class="nav" href="admin.html">Company policy</a>
+    <a class="nav" href="admin.html">Members and budgets</a>
+    <a class="nav" href="audit.html">Audit log</a>
+    <a class="nav" href="session.html">Open a session</a>
+    <p style="color: #A19F94; font-size: 12px; padding: 18px 12px 0; margin: 0">Tenant acme · signed in as ops@acme, admin</p>
+  </nav>
+
+  <main id="top" style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; max-width: 1120px">
+
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between">
+      <div>
+        <h1 style="font-size: 28px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em">Dashboard</h1>
+        <p style="color: #A19F94; margin: 0">How acme used the agent {{periodWords}}. Sample data, updated at 09:45.</p>
+      </div>
+      <div role="group" aria-label="Period" style="display: flex; gap: 4px; padding: 4px; border: 1px solid #3E3D39; border-radius: 10px">
+        <button class="seg" type="button" aria-pressed="{{isToday}}" onClick="{{pickToday}}" style="{{todayStyle}}">Today</button>
+        <button class="seg" type="button" aria-pressed="{{isWeek}}" onClick="{{pickWeek}}" style="{{weekStyle}}">Last 7 days</button>
+      </div>
+    </div>
+
+    <section aria-label="Needs your attention" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px">
+      <a class="att" href="admin.html"><span style="width: 8px; height: 8px; border-radius: 4px; background: #EC8077; flex: none"></span><span><strong style="font-weight: 600">wei is at 94% of today's cap.</strong> <span style="color: #A19F94">The next large call will be refused.</span></span></a>
+      <a class="att" href="approvals.html"><span style="width: 8px; height: 8px; border-radius: 4px; background: #E39A7E; flex: none"></span><span><strong style="font-weight: 600">3 approvals are waiting.</strong> <span style="color: #A19F94">The oldest is denied in 1:48.</span></span></a>
+      <a class="att" href="audit.html"><span style="width: 8px; height: 8px; border-radius: 4px; background: #E39A7E; flex: none"></span><span><strong style="font-weight: 600">1 request had an invalid token.</strong> <span style="color: #A19F94">sam at 09:40, refused.</span></span></a>
+    </section>
+
+    <section aria-label="Summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="6">
+        <div class="card" style="padding: 16px 18px">
+          <p style="margin: 0 0 8px; color: #A19F94; font-size: 13px">{{k.label}}</p>
+          <p class="mono" style="margin: 0 0 6px; font-size: 26px; font-weight: 500; letter-spacing: -0.02em">{{k.value}}</p>
+          <p style="margin: 0; color: #A19F94; font-size: 12.5px">{{k.sub}}</p>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px">
+      <section class="card" style="flex: 2 1 420px; min-width: 0">
+        <h2 class="h2">Tokens per day</h2>
+        <p class="note">Input and output tokens across all members, last 7 days. Today is so far.</p>
+        <div role="img" aria-label="Tokens per day from Nov 16 to Nov 22: 1.62M, 1.85M, 1.71M, 2.04M, 1.38M, 0.31M and 1.42M so far today" style="position: relative; height: 200px; margin: 8px 0 0 36px; border-bottom: 1px solid #5A5953">
+          <div style="position: absolute; left: -36px; right: 0; top: 24px; border-top: 1px dashed #3E3D39"><span class="mono" style="position: absolute; top: -8px; left: 0; font-size: 11px; color: #A19F94">2.5M</span></div>
+          <div style="position: absolute; left: -36px; right: 0; top: 59px; border-top: 1px dashed #3E3D39"><span class="mono" style="position: absolute; top: -8px; left: 0; font-size: 11px; color: #A19F94">2M</span></div>
+          <div style="position: absolute; left: -36px; right: 0; top: 130px; border-top: 1px dashed #3E3D39"><span class="mono" style="position: absolute; top: -8px; left: 0; font-size: 11px; color: #A19F94">1M</span></div>
+          <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; align-items: end; padding: 0 6px">
+            <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%">
+                <span class="mono" style="font-size: 11.5px; margin-bottom: 4px; {{d.labelStyle}}">{{d.label}}</span>
+                <span style="display: block; width: 100%; max-width: 44px; border-radius: 4px 4px 0 0; {{d.barStyle}}"></span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; margin-left: 36px; padding: 8px 6px 0">
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+            <span style="text-align: center; font-size: 12px; {{d.dayStyle}}">{{d.day}}</span>
+          </sc-for>
+        </div>
+      </section>
+
+      <section class="card" style="flex: 1 1 280px; min-width: 0">
+        <h2 class="h2">Approvals</h2>
+        <p class="note">{{approvalTotal}} requests {{periodWords}}. Unanswered ones are denied after 5 minutes.</p>
+        <div role="img" aria-label="{{approvalAria}}" style="display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; margin-bottom: 14px">
+          <sc-for list="{{approvals}}" as="a" hint-placeholder-count="4">
+            <span style="{{a.barStyle}}"></span>
+          </sc-for>
+        </div>
+        <sc-for list="{{approvals}}" as="a" hint-placeholder-count="4">
+          <div class="row"><span style="display: flex; gap: 8px; align-items: center"><span style="width: 10px; height: 10px; border-radius: 3px; {{a.swatch}}"></span>{{a.name}}</span><span class="mono">{{a.count}}</span></div>
+        </sc-for>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2 class="h2">Members</h2>
+      <p class="note">Spend is checked against each member's daily cap before every model call.</p>
+      <div style="overflow-x: auto">
+        <table>
+          <thead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Sessions</th><th scope="col">Tokens</th><th scope="col">Spend against cap</th><th scope="col">Last active</th></tr></thead>
+          <tbody>
+            <sc-for list="{{users}}" as="u" hint-placeholder-count="4">
+              <tr>
+                <td>{{u.name}}</td>
+                <td style="color: #C9C6BA">{{u.role}}</td>
+                <td class="mono">{{u.sessions}}</td>
+                <td class="mono">{{u.tokens}}</td>
+                <td>
+                  <span style="display: flex; align-items: center; gap: 10px">
+                    <span style="width: 120px; height: 6px; border-radius: 3px; background: #3A3935; overflow: hidden; flex: none"><span style="display: block; height: 6px; {{u.bar}}"></span></span>
+                    <span class="mono" style="font-size: 13px; {{u.spendStyle}}">{{u.spend}}</span>
+                  </span>
+                </td>
+                <td style="color: #C9C6BA">{{u.last}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px">
+      <section class="card" style="flex: 1 1 360px; min-width: 0">
+        <h2 class="h2">Safety checks</h2>
+        <p class="note">The state of each protection right now.</p>
+        <div class="row"><span>Audit chain</span><span style="color: #9BC283">Intact, 1,284 events, checked 09:40</span></div>
+        <div class="row"><span>Sandbox</span><span style="color: #9BC283">On for every session, 0 escapes</span></div>
+        <div class="row"><span>API key</span><span style="color: #9BC283">Held by the proxy only</span></div>
+        <div class="row"><span>Invalid tokens</span><span style="color: #E39A7E">1 today, sam at 09:40</span></div>
+        <div class="row"><span>Company policy</span><span style="color: #C9C6BA">v7, published by ops</span></div>
+        <div class="row" style="border-bottom: 0"><span>Model</span><span class="mono" style="color: #C9C6BA; font-size: 13px">deepseek-flash, pinned</span></div>
+      </section>
+
+      <section class="card" style="flex: 1 1 360px; min-width: 0">
+        <h2 class="h2">Most blocked rules</h2>
+        <p class="note">{{blockedTotal}} actions blocked by company policy {{periodWords}}.</p>
+        <sc-for list="{{blocked}}" as="b" hint-placeholder-count="3">
+          <div style="padding: 9px 0; border-bottom: 1px solid #34332F">
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px"><span class="mono" style="font-size: 13px">{{b.rule}}</span><span class="mono" style="font-size: 13px">{{b.count}}</span></div>
+            <span style="display: block; height: 6px; border-radius: 3px; background: #3A3935; overflow: hidden"><span style="display: block; height: 6px; background: #EC8077; {{b.width}}"></span></span>
+          </div>
+        </sc-for>
+        <p style="margin: 14px 0 0; font-size: 13px"><a href="audit.html">See every event in the audit log</a></p>
+      </section>
+    </div>
+  </main>
+</div></script>
+<script src="dc-runtime.js"></script>
+<script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { period: 'today' };
+  }
+  renderVals() {
+    const t = this.state.period === 'today';
+    const on = 'background: #3A3935; color: #E8E6DC';
+    const kpis = t ? [
+      { label: 'Spend', value: '$6.93', sub: 'of $15.00 in daily caps' },
+      { label: 'Tokens', value: '1.42M', sub: '1.18M in, 0.24M out' },
+      { label: 'Model calls', value: '412', sub: '6 retried after a 429' },
+      { label: 'Sessions', value: '14', sub: '3 running now' },
+      { label: 'Approvals', value: '30', sub: '3 waiting, 2 timed out' },
+      { label: 'Blocked by policy', value: '5', sub: '0 sandbox escapes' }
+    ] : [
+      { label: 'Spend', value: '$50.40', sub: 'about $7.20 a day' },
+      { label: 'Tokens', value: '10.3M', sub: '8.6M in, 1.7M out' },
+      { label: 'Model calls', value: '3,010', sub: '41 retried after a 429' },
+      { label: 'Sessions', value: '88', sub: 'across 4 members' },
+      { label: 'Approvals', value: '171', sub: '9 timed out and denied' },
+      { label: 'Blocked by policy', value: '31', sub: '0 sandbox escapes' }
+    ];
+    const raw = [['Mon 16', 1.62], ['Tue 17', 1.85], ['Wed 18', 1.71], ['Thu 19', 2.04], ['Fri 20', 1.38], ['Sat 21', 0.31], ['Today', 1.42]];
+    const days = raw.map((r, i) => {
+      const last = i === raw.length - 1;
+      const hl = last ? t : !t;
+      return {
+        day: r[0], label: r[1].toFixed(2) + 'M',
+        barStyle: 'height: ' + Math.round(r[1] / 2.5 * 176) + 'px; background: ' + (last ? '#D97757' : (hl ? '#A19F94' : '#6E6C66')),
+        labelStyle: last ? 'color: #E8E6DC' : 'color: #A19F94',
+        dayStyle: last ? 'color: #E8E6DC; font-weight: 600' : 'color: #A19F94'
+      };
+    });
+    const ap = t ? [['Approved', 21, '#9BC283'], ['Denied by a person', 4, '#EC8077'], ['Timed out, denied', 2, '#B85A52'], ['Waiting', 3, '#E39A7E']]
+                 : [['Approved', 140, '#9BC283'], ['Denied by a person', 19, '#EC8077'], ['Timed out, denied', 9, '#B85A52'], ['Waiting', 3, '#E39A7E']];
+    const apTotal = ap.reduce((s, a) => s + a[1], 0);
+    const approvals = ap.map(a => ({
+      name: a[0], count: a[1],
+      barStyle: 'flex: ' + a[1] + ' 1 0; background: ' + a[2],
+      swatch: 'background: ' + a[2]
+    }));
+    const people = t ? [
+      ['lin@acme', 'User', 5, '380k', 1.82, 5, 'Now'],
+      ['wei@acme', 'User', 6, '980k', 4.71, 5, '09:40, near cap'],
+      ['sam@acme', 'User', 3, '60k', 0.40, 3, '09:40'],
+      ['ops@acme', 'Admin', 0, '0', 0, 2, '09:40']
+    ] : [
+      ['lin@acme', 'User', 31, '2.9M', 14.15, 35, 'Now'],
+      ['wei@acme', 'User', 33, '5.6M', 27.33, 35, 'Today 09:40'],
+      ['sam@acme', 'User', 20, '1.5M', 7.32, 21, 'Today 09:40'],
+      ['ops@acme', 'Admin', 4, '330k', 1.60, 14, 'Today 09:40']
+    ];
+    const users = people.map(p => {
+      const pct = Math.min(100, Math.round(p[4] / p[5] * 100));
+      const hot = pct >= 90;
+      return {
+        name: p[0], role: p[1], sessions: p[2], tokens: p[3], last: p[6],
+        spend: '$' + p[4].toFixed(2) + ' of $' + p[5].toFixed(2),
+        bar: 'width: ' + pct + '%; background: ' + (hot ? '#EC8077' : '#E39A7E'),
+        spendStyle: hot ? 'color: #EC8077' : ''
+      };
+    });
+    const bl = t ? [['Bash(curl *)', 3], ['Read(~/.ssh/**)', 1], ['Bash(rm -rf *)', 1]] : [['Bash(curl *)', 19], ['Read(~/.ssh/**)', 8], ['Bash(rm -rf *)', 4]];
+    const blMax = bl[0][1];
+    return {
+      isToday: t, isWeek: !t,
+      todayStyle: t ? on : '', weekStyle: t ? '' : on,
+      periodWords: t ? 'today' : 'in the last 7 days',
+      kpis: kpis, days: days, approvals: approvals, users: users,
+      approvalTotal: apTotal,
+      approvalAria: ap.map(a => a[0] + ' ' + a[1]).join(', '),
+      blocked: bl.map(b => ({ rule: b[0], count: b[1], width: 'width: ' + Math.round(b[1] / blMax * 100) + '%' })),
+      blockedTotal: bl.reduce((s, b) => s + b[1], 0),
+      pickToday: () => this.setState({ period: 'today' }),
+      pickWeek: () => this.setState({ period: 'week' })
+    };
+  }
+}
+DC.mount(Component);
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-22T09:00:00Z"},
+  "title": "Enterprise Agent Service prototype",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 900, "title": "Developer session", "expand": "fill", "is_interactive": true},
+    "Approvals.dc.html": {"x": 1360, "y": 0, "w": 390, "h": 844, "title": "Approvals on the phone", "is_interactive": true},
+    "Admin.dc.html": {"x": 0, "y": 1020, "w": 1280, "h": 1000, "title": "Admin console", "expand": "fill", "is_interactive": true},
+    "Audit.dc.html": {"x": 1360, "y": 1020, "w": 1280, "h": 940, "title": "Audit log", "expand": "fill", "is_interactive": true},
+    "Dashboard.dc.html": {"x": 0, "y": 2140, "w": 1280, "h": 1180, "title": "Admin dashboard", "expand": "fill", "is_interactive": true}
+  },
+  "order": ["Main.dc.html", "Approvals.dc.html", "Admin.dc.html", "Audit.dc.html", "Dashboard.dc.html"],
+  "notes": {
+    "readme": {"x": -520, "y": 0, "w": 440, "text": "agentd, the enterprise agent service from the PRD. Version 1.0, approved 2026-11-22. All data is sample data, not real runs.\n\nPress Play on a screen to try it:\n- Developer session: answer the permission box.\n- Phone: approve or deny waiting tool calls.\n- Admin: lock the policy, revoke a token.\n- Audit: verify the chain, then tamper with a line.", "fill": "orange", "size": "m"}
+  },
+  "designSystems": []
+}

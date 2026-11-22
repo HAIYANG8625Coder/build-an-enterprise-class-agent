@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agentd prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#262624;color:#E8E6DC;font:15px/1.5 'IBM Plex Sans',system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:56px 24px}
+h1{font:600 30px 'IBM Plex Mono',monospace;color:#E39A7E;margin:0 0 8px}
+p.lead{color:#C9C6BA;margin:0 0 32px}
+a.screen{display:block;padding:18px 20px;border:1px solid #3E3D39;border-radius:10px;margin-bottom:12px;color:#E8E6DC;text-decoration:none}
+a.screen:hover,a.screen:focus-visible{border-color:#D97757;outline:none}
+a.screen strong{display:block;font-weight:600;margin-bottom:2px}
+a.screen span{color:#A19F94;font-size:14px}
+footer{color:#A19F94;font-size:13px;margin-top:32px}
+footer a{color:#E39A7E}
+</style>
+</head>
+<body>
+<main>
+<h1>agentd</h1>
+<p class="lead">The clickable prototype of the enterprise agent service, version 1.0, approved 2026-11-22. Every number is sample data, not a real run.</p>
+<a class="screen" href="session.html"><strong>Developer session</strong><span>Talk to the agent. A prompt injection is blocked, then an edit waits for your answer.</span></a>
+<a class="screen" href="approvals.html"><strong>Approvals on the phone</strong><span>Approve or deny waiting tool calls before the countdown denies them.</span></a>
+<a class="screen" href="dashboard.html"><strong>Admin dashboard</strong><span>Spend, tokens, sessions, approvals and safety checks, today or for the last 7 days.</span></a>
+<a class="screen" href="admin.html"><strong>Admin console</strong><span>Lock the company policy, publish a new version, revoke a token.</span></a>
+<a class="screen" href="audit.html"><strong>Audit log</strong><span>Filter events by who wrote them, verify the chain, then tamper with a line.</span></a>
+<footer>Read the <a href="../docs/PRD.md">PRD</a> and the <a href="../docs/TRD.md">TRD</a>. Built from <code>src/</code> by <code>tools/build_prototype.py</code>.</footer>
+</main>
+</body>
+</html>

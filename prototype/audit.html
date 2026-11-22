@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit log · agentd prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#262624}
+a{color:#E39A7E}a:hover{color:#F0B9A3}
+.nav{display:block;padding:10px 12px;border-radius:6px;color:#C9C6BA;text-decoration:none;font-size:14px}
+.nav:hover{background:#30302E;color:#E8E6DC}
+.nav:focus-visible,.chip:focus-visible,.b:focus-visible{outline:2px solid #E39A7E;outline-offset:2px}
+.chip{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #4A4943;background:none;color:#C9C6BA;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.chip:hover{background:#30302E}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:500;color:#A19F94;font-size:12.5px;padding:8px 12px 8px 0;border-bottom:1px solid #3E3D39;white-space:nowrap}
+td{padding:9px 12px 9px 0;border-bottom:1px solid #34332F;vertical-align:top}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px}
+.src{font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:1px 7px;border-radius:4px;border:1px solid #5A5953;color:#C9C6BA;white-space:nowrap}
+.b{min-height:40px;padding:0 16px;border-radius:8px;font:500 14px 'IBM Plex Sans',sans-serif;cursor:pointer;background:none;color:#E8E6DC;border:1px solid #5A5953}
+.b:hover{background:#3A3935}
+.primary{background:#D97757;border-color:#D97757;color:#1F1E1C}
+.primary:hover{background:#E39A7E}
+</style>
+<style>
+body{background:#1F1E1C}
+.dc-back{position:fixed;right:16px;bottom:16px;padding:8px 14px;border-radius:999px;background:#30302E;border:1px solid #4A4943;color:#E8E6DC;font:500 13px 'IBM Plex Sans',system-ui,sans-serif;text-decoration:none}
+.dc-back:hover{background:#3A3935;color:#E8E6DC}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<a class="dc-back" href="index.html">All screens</a>
+<script type="text/x-template" id="dc-template"><div style="min-height: 940px; background: #262624; color: #E8E6DC; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; display: flex; flex-wrap: wrap">
+
+  <nav aria-label="Admin" style="flex: 1 1 200px; max-width: 232px; padding: 20px 14px; border-right: 1px solid #3E3D39; box-sizing: border-box">
+    <div style="padding: 0 12px 18px; font-family: 'IBM Plex Mono', monospace"><span style="font-weight: 600; color: #E39A7E; font-size: 16px">agentd</span><span style="color: #A19F94; font-size: 13px"> admin</span></div>
+    <a class="nav" href="dashboard.html">Dashboard</a>
+    <a class="nav" href="admin.html">Company policy</a>
+    <a class="nav" href="admin.html">Members and budgets</a>
+    <a class="nav" href="#log" style="background: #30302E; color: #E8E6DC">Audit log</a>
+    <a class="nav" href="session.html">Open a session</a>
+  </nav>
+
+  <main id="log" style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; max-width: 1120px">
+    <div>
+      <h1 style="font-size: 28px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em">Audit log</h1>
+      <p style="color: #A19F94; margin: 0">Who did what in acme today, and whether it was allowed. Prompt and file contents are not stored.</p>
+    </div>
+
+    <section aria-label="Chain check" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 18px 20px; border-radius: 10px; {{checkBox}}">
+      <div style="flex: 1 1 320px">
+        <p style="margin: 0 0 4px; font-weight: 600; font-size: 16px">{{checkTitle}}</p>
+        <p style="margin: 0; color: #C9C6BA">{{checkText}}</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button class="b" type="button" onClick="{{toggleTamper}}">{{tamperLabel}}</button>
+        <button class="b primary" type="button" onClick="{{verify}}">Verify the chain</button>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+      <span style="color: #A19F94; font-size: 13px; margin-right: 4px">Written by</span>
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+        <button class="chip" type="button" aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="{{f.style}}">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <div style="overflow-x: auto; border: 1px solid #3E3D39; border-radius: 10px; padding: 4px 16px">
+      <table>
+        <thead><tr><th scope="col">#</th><th scope="col">Time</th><th scope="col">Member</th><th scope="col">Session</th><th scope="col">Event</th><th scope="col">Decision</th><th scope="col">Written by</th></tr></thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+            <tr style="{{r.rowStyle}}">
+              <td class="mono" style="color: #A19F94">{{r.n}}</td>
+              <td class="mono">{{r.time}}</td>
+              <td>{{r.who}}</td>
+              <td class="mono" style="color: #C9C6BA">{{r.session}}</td>
+              <td>{{r.event}}</td>
+              <td style="{{r.decStyle}}">{{r.decision}}</td>
+              <td><span class="src" style="{{r.srcStyle}}">{{r.src}}</span></td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+    <p style="color: #A19F94; font-size: 13px; margin: 0">The service and the proxy write events from what they see. Events with a dashed tag are reported by the agent and can't be checked from outside it. The chain catches a line that is edited or removed, not a log rewritten from start to end.</p>
+  </main>
+</div></script>
+<script src="dc-runtime.js"></script>
+<script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'all', tampered: false, checked: false };
+  }
+  renderVals() {
+    const s = this.state;
+    const all = [
+      { n: '1,284', time: '09:41:20', who: 'lin', session: 's-0142', event: 'Edit config.py', decision: 'Approved by lin', src: 'service' },
+      { n: '1,283', time: '09:41:12', who: 'lin', session: 's-0142', event: 'Approval sent to phone', decision: 'Waiting', src: 'service' },
+      { n: '1,282', time: '09:41:11', who: 'lin', session: 's-0142', event: 'Tool call: edit_file', decision: 'Ask (company rule)', src: 'engine' },
+      { n: '1,281', time: '09:41:07', who: 'lin', session: 's-0142', event: 'bash: curl to paste.example.com', decision: 'Denied (company rule)', src: 'service' },
+      { n: '1,280', time: '09:41:06', who: 'lin', session: 's-0142', event: 'Tool call: bash', decision: 'Deny', src: 'engine' },
+      { n: '1,279', time: '09:41:05', who: 'lin', session: 's-0142', event: 'Model call, 2.9k tokens, $0.01', decision: 'Within budget', src: 'proxy' },
+      { n: '1,278', time: '09:40:58', who: 'wei', session: 's-0140', event: 'Model call refused at daily cap', decision: 'Stopped ($4.98 of $5.00)', src: 'proxy' },
+      { n: '1,277', time: '09:40:51', who: 'ops', session: '-', event: 'Company policy v7 published', decision: 'Admin change', src: 'service' },
+      { n: '1,276', time: '09:40:44', who: 'sam', session: 's-0138', event: 'Request without a valid token', decision: 'Refused (401)', src: 'service' },
+      { n: '1,275', time: '09:40:30', who: 'lin', session: 's-0142', event: 'Session started', decision: 'Allowed', src: 'service' }
+    ];
+    const decColor = d => /Denied|Deny|Refused|Stopped/.test(d) ? 'color: #EC8077' : (/Ask|Waiting|Approved/.test(d) ? 'color: #E39A7E' : 'color: #C9C6BA');
+    const rows = all.filter(r => s.filter === 'all' || r.src === s.filter).map(r => {
+      const hit = s.tampered && r.n === '1,281';
+      return Object.assign({}, r, {
+        event: hit ? 'bash: ls' : r.event,
+        decision: hit ? 'Allowed' : r.decision,
+        decStyle: hit ? 'color: #C9C6BA' : decColor(r.decision),
+        srcStyle: r.src === 'engine' ? 'border-style: dashed' : '',
+        rowStyle: hit && s.checked ? 'background: #3F2826' : ''
+      });
+    });
+    const f = (id, label) => ({ label: label, on: s.filter === id, style: s.filter === id ? 'background: #3A3935; color: #E8E6DC; border-color: #D97757' : '', pick: () => this.setState({ filter: id }) });
+    let checkTitle = 'Chain not checked yet', checkText = 'Each line holds the hash of the line before it. Verify to recompute all 1,284.', checkBox = 'border: 1px solid #3E3D39';
+    if (s.checked && !s.tampered) { checkTitle = 'Chain intact: 1,284 of 1,284 lines'; checkText = 'No line was edited or removed since 00:00.'; checkBox = 'border: 1px solid #4F6343; background: #2E3529'; }
+    if (s.checked && s.tampered) { checkTitle = 'Chain broken at line 1,281'; checkText = 'Line 1,281 no longer matches the hash stored in line 1,282. Someone changed a denied curl into an allowed ls.'; checkBox = 'border: 1.5px solid #EC8077; background: #3A2624'; }
+    return {
+      rows: rows,
+      filters: [f('all', 'Everyone'), f('service', 'Service'), f('proxy', 'Proxy'), f('engine', 'Agent (self-reported)')],
+      checkTitle: checkTitle, checkText: checkText, checkBox: checkBox,
+      tamperLabel: s.tampered ? 'Undo the edit' : 'Try editing line 1,281',
+      toggleTamper: () => this.setState({ tampered: !s.tampered, checked: false }),
+      verify: () => this.setState({ checked: true })
+    };
+  }
+}
+DC.mount(Component);
+</script>
+</body>
+</html>

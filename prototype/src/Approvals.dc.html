@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agentd approvals on the phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#E39A7E}a:hover{color:#F0B9A3}
+.btn{flex:1;min-height:48px;border-radius:10px;font:600 15px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.btn:focus-visible{outline:2px solid #E39A7E;outline-offset:2px}
+.yes{background:#D97757;color:#1F1E1C;border:0}
+.yes:hover{background:#E39A7E}
+.no{background:none;color:#E8E6DC;border:1px solid #5A5953}
+.no:hover{background:#3A3935}
+.tabbtn{flex:1;min-height:44px;background:none;border:0;border-bottom:2px solid transparent;color:#A19F94;font:500 14px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.tabbtn:focus-visible{outline:2px solid #E39A7E;outline-offset:-2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #262624; color: #E8E6DC; font-family: 'IBM Plex Sans', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 28px 20px 0">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; color: #E39A7E">agentd</span>
+      <span style="font-size: 13px; color: #A19F94">lin@acme</span>
+    </div>
+    <h1 style="font-size: 26px; font-weight: 600; margin: 18px 0 4px; letter-spacing: -0.01em">{{heading}}</h1>
+    <p style="margin: 0; color: #A19F94; font-size: 14px">Unanswered requests are denied after 5 minutes.</p>
+    <div role="tablist" aria-label="Approvals" style="display: flex; margin-top: 18px; border-bottom: 1px solid #3E3D39">
+      <button class="tabbtn" type="button" role="tab" aria-selected="{{onWaiting}}" onClick="{{showWaiting}}" style="{{waitingTabStyle}}">Waiting ({{waitingCount}})</button>
+      <button class="tabbtn" type="button" role="tab" aria-selected="{{onDone}}" onClick="{{showDone}}" style="{{doneTabStyle}}">Answered ({{doneCount}})</button>
+    </div>
+  </header>
+
+  <div style="flex: 1; overflow-y: auto; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 14px">
+    <sc-if value="{{onWaiting}}" hint-placeholder-val="{{ true }}">
+      <sc-for list="{{waiting}}" as="r" hint-placeholder-count="3">
+        <article style="border: 1px solid #3E3D39; border-radius: 14px; padding: 16px; background: #2C2B29">
+          <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: #A19F94">
+            <span>{{r.who}} · {{r.session}}</span>
+            <span style="color: #E39A7E">{{r.left}}</span>
+          </div>
+          <h2 style="font-size: 17px; font-weight: 600; margin: 8px 0 8px">{{r.title}}</h2>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; background: #1F1E1C; border-radius: 8px; padding: 8px 10px; color: #C9C6BA; overflow-wrap: anywhere; white-space: pre-line">{{r.detail}}</div>
+          <p style="font-size: 12.5px; color: #A19F94; margin: 8px 0 14px">{{r.why}}</p>
+          <div style="display: flex; gap: 10px">
+            <button class="btn no" type="button" onClick="{{r.deny}}">Deny</button>
+            <button class="btn yes" type="button" onClick="{{r.approve}}">Approve</button>
+          </div>
+        </article>
+      </sc-for>
+      <sc-if value="{{allClear}}" hint-placeholder-val="{{ false }}">
+        <div style="text-align: center; padding: 64px 12px; color: #A19F94">
+          <p style="font-size: 17px; color: #E8E6DC; margin: 0 0 6px">Nothing is waiting for you</p>
+          <p style="margin: 0 0 16px; font-size: 14px">New requests show up here and as a notification.</p>
+          <button class="btn no" type="button" onClick="{{restart}}" style="flex: none; padding: 0 18px">Load the sample requests again</button>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{onDone}}" hint-placeholder-val="{{ false }}">
+      <sc-for list="{{done}}" as="r" hint-placeholder-count="2">
+        <div style="display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid #34332F">
+          <span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; {{r.badgeStyle}}">{{r.result}}</span>
+          <span style="flex: 1; font-size: 14px">{{r.title}}</span>
+          <span style="font-size: 12px; color: #A19F94">{{r.session}}</span>
+        </div>
+      </sc-for>
+      <sc-if value="{{noneDone}}" hint-placeholder-val="{{ false }}">
+        <p style="color: #A19F94; text-align: center; padding: 48px 0">You haven't answered anything yet today.</p>
+      </sc-if>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'waiting', answers: {} };
+  }
+  renderVals() {
+    const all = [
+      { id: 'a1', who: 'Agent for lin', session: 's-0142', left: '4:32 left', title: 'Edit config.py', detail: '- TAX_RATE = 0.08\n+ TAX_RATE = 0.09', why: 'Company rule: ask before any edit.' },
+      { id: 'a2', who: 'Agent for lin', session: 's-0139', left: '3:05 left', title: 'Run a command', detail: 'pip install pytest-randomly', why: 'Company rule: ask before installing packages. Network goes through the allow-list.' },
+      { id: 'a3', who: 'Agent for lin', session: 's-0139', left: '1:48 left', title: 'Delete a file', detail: 'tests/fixtures/old_cart.json', why: 'Company rule: ask before deleting files.' }
+    ];
+    const ans = this.state.answers;
+    const tab = this.state.tab;
+    const set = (id, v) => this.setState({ answers: Object.assign({}, ans, { [id]: v }) });
+    const waiting = all.filter(r => !ans[r.id]).map(r => Object.assign({}, r, {
+      approve: () => set(r.id, 'Approved'),
+      deny: () => set(r.id, 'Denied')
+    }));
+    const done = all.filter(r => ans[r.id]).map(r => ({
+      title: r.title, session: r.session, result: ans[r.id],
+      badgeStyle: ans[r.id] === 'Approved' ? 'background: #3B4A33; color: #CDE3BE' : 'background: #4D2E2A; color: #F5C2BC'
+    }));
+    const active = 'color: #E8E6DC; border-bottom-color: #D97757';
+    return {
+      heading: waiting.length ? waiting.length + ' requests need you' : 'All answered',
+      waiting: waiting, done: done,
+      waitingCount: waiting.length, doneCount: done.length,
+      allClear: waiting.length === 0, noneDone: done.length === 0,
+      onWaiting: tab === 'waiting', onDone: tab === 'done',
+      waitingTabStyle: tab === 'waiting' ? active : '',
+      doneTabStyle: tab === 'done' ? active : '',
+      showWaiting: () => this.setState({ tab: 'waiting' }),
+      showDone: () => this.setState({ tab: 'done' }),
+      restart: () => this.setState({ answers: {}, tab: 'waiting' })
+    };
+  }
+}
+</script>
+</body>
+</html>
