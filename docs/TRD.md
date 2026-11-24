@@ -393,9 +393,9 @@ build-an-enterprise-class-agent/
 
 Six questions decide details, not the architecture. Phase 0 answers the first three by experiment.
 
-- [ ] **Seatbelt profile:** can the Python engine start and import its packages under `(deny default)` with only the paths in section 7? Default: test in Phase 0, widen only the paths that fail, and list each one.
-- [ ] **Loopback rule:** does `sandbox-exec` allow one loopback port while blocking others? If not, the proxy listens on a Unix socket inside the tenant's temp folder instead.
-- [ ] **DeepSeek usage fields:** does every response carry input and output token counts in the Anthropic shape? Default: check in Phase 0; if not, the proxy counts from the response text and marks spend as estimated.
+- [~] **Seatbelt profile (probe tested 2026-11-24; needs `(literal "/")` to start; real engine untested):** can the Python engine start and import its packages under `(deny default)` with only the paths in section 7? Default: test in Phase 0, widen only the paths that fail, and list each one.
+- [x] **Loopback rule (answered 2026-11-24: yes, one port can be allowed):** does `sandbox-exec` allow one loopback port while blocking others? If not, the proxy listens on a Unix socket inside the tenant's temp folder instead.
+- [x] **DeepSeek usage fields (checked 2026-11-24: present in plain, streamed and tool calls):** does every response carry input and output token counts in the Anthropic shape? Default: check in Phase 0; if not, the proxy counts from the response text and marks spend as estimated.
 - [ ] **Docker socket:** the runner needs Docker to start command containers, and that socket is powerful. Default: give it only to the service, never to engines, and say so in the threat model.
 - [ ] **Streaming format:** NDJSON over chunked HTTP, or server-sent events? Default: NDJSON, since `curl` and the standard library handle it simply.
 - [ ] **Proposed values:** limits in section 10, the 8-hour session token, 60 s dashboard cache, UTC days. Default: accept for Phase 0 and tune from real runs.
@@ -403,7 +403,7 @@ Six questions decide details, not the architecture. Phase 0 answers the first th
 **Added in v1.1 (2026-11-24), all unconfirmed until tested**
 
 - [ ] **Anchor:** where does the newest chain hash live (a file outside the sandbox, or a read-only Docker volume)? Default: a file outside `AGENTD_HOME/audit/`, written after every event.
-- [ ] **Docker networking:** services bind to `127.0.0.1` on the Mac, which a container under Colima can't reach. Default: run `keyproxy` in a container on an internal network, test it in Phase 0.
-- [ ] **`sandbox-exec` here:** a test run from the build session was killed (exit 137). Default: re-test from a plain terminal in Phase 0 before relying on it.
-- [ ] **Colima health:** `colima status` did not return in 120 s from the build session, though `docker version` answered. Default: re-check in Phase 0.
+- [x] **Docker networking (checked 2026-11-24):** on the default network a container under Colima CAN reach host services on `127.0.0.1` through `host.docker.internal`, including `agentd`. Rule: engine and command containers run only on a Docker `--internal` network (tested: reaches a peer by name, no internet, no host); `keyproxy` runs as a container on it.
+- [x] **`sandbox-exec` here (checked 2026-11-24):** works. The earlier failure was a bad test. A Python 3.9 probe starts under `(deny default)` and is confined as in section 7; the real engine is still untested.
+- [x] **Colima health (checked 2026-11-24):** `colima list` shows Running and `docker run` works. `colima status` itself hangs; use `colima list`.
 - [ ] **Unread docs pages:** admin-setup, server-managed-settings, managed-mcp, network-config, zero-data-retention, hipaa-setup, the Claude apps gateway pages, plugins/org. Default: read them in Phase 0 and mark each claim.
