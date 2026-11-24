@@ -1,13 +1,13 @@
 # PRD: Enterprise-class Agent Service (Series 2)
 
-Version 1.0 · approved 2026-11-22 · Michael
+Version 1.1 (draft) · v1.0 approved 2026-11-22 · v1.1 changes approved by Michael 2026-11-24
 
 This PRD defines a multi-user agent service built around the series 1 agent. This is version 1.0, approved on 2026-11-22. Nothing in it is built yet.
 
 | Field | Value |
 | --- | --- |
 | Product | Enterprise-class Agent Service, the subject of series 2 「从零做企业级 Agent」 |
-| Version | 1.0 |
+| Version | 1.1 draft (v1.0 approved 2026-11-22) |
 | Owner | Michael (product, video) |
 | Status | Approved 2026-11-22, together with the TRD and the prototype. Phase 0 is next |
 | Code | Public repo `HAIYANG8625Coder/build-an-enterprise-class-agent` (PRD, TRD and prototype; code starts in Phase 0) |
@@ -102,7 +102,7 @@ Eight requirements define "enterprise-class" here. Each is done only when its ac
 | R2 | Policy | Managed rules load before project and user rules. Order: deny, then ask, then allow. Lock flags `allow_managed_rules_only` and `disable_bypass` | A managed deny beats a user allow. A repo file that tries to loosen the policy is ignored. A red-team set (5 runs per case) shows the policy holds | P0 must have | 2, 3 |
 | R3 | Isolation | The whole engine process runs in a sandbox: writes only in the tenant folder, no reads of the db, audit log or key file. Commands get a stricter profile with no network | `touch ../x` fails. `curl blocked.example` fails. Reading `~/.ssh` fails. The engine's `read_file` on the db fails. Tenant A can't reach tenant B by path, symlink or memory | P0 must have | 4, 6 |
 | R4 | Secrets | The engine gets a per-session token, never the key. The proxy checks the token and adds the key | The key is not in the engine's environment or any file it can read. A wrong or expired session token is refused. `curl localhost:<proxy port>` from a command fails | P0 must have | 5 |
-| R5 | Audit | One event per request, model call, tool call and decision, hash-chained. Service and proxy write the log; engine events are marked `source: engine` | `verify_audit.py` detects a removed or edited line. The engine can't open the log. Prompt and tool content are off by default | P0 must have | 7 |
+| R5 | Audit | One event per request, model call, tool call and decision, hash-chained. Service and proxy write the log; engine events are marked `source: engine` | `verify_audit.py` detects a removed or edited line. The newest chain hash is also written to an anchor outside the engine's reach, so a whole-file rewrite is detected too (v1.1). A cross-check compares the engine's reported tool calls with what the service and proxy saw, and flags a mismatch (v1.1). The engine can't open the log. Prompt and tool content are off by default | P0 must have | 7 |
 | R6 | Cost | The proxy prices each call from `usage` and keeps a per-user daily total. It refuses the call that would cross the cap | A run that crosses the cap stops with a clear message. The overshoot is at most one call | P0 must have | 8 |
 | R7 | Reliability | Timeouts at three levels (model call, turn, session), retry with back-off on 429 and 5xx, saved sessions, approvals over HTTP with a timeout that denies | Kill the process mid-task, resume, finish. An unanswered approval is denied after its timeout (fake clock) | P1 should have | 10, 11 |
 | R8 | Release gate | CI runs the no-key checks on every push and the real evals on a schedule. pass^k is the gate | A change that breaks a check can't merge. Each failed eval saves its trace | P1 should have | 9 |
@@ -117,7 +117,7 @@ The hard constraints come from the series rules and this Mac. The targets marked
 | --- | --- |
 | Stack | Plain Python, standard library only for new code (`http.server`, `sqlite3`, `subprocess`, `hashlib`, `hmac`). The engine keeps its `anthropic` SDK dependency |
 | Python | Runs on Python 3.9 (this Mac): no `match`, no `X \| Y` type hints |
-| Platform | macOS with `sandbox-exec`, and Linux in Docker. Both sandbox variants are tested on this Mac (Colima) and Docker is also tested in CI on Linux |
+| Platform | Docker is the main sandbox (v1.1); `sandbox-exec` on macOS is the second option. Original v1.0 text: macOS with `sandbox-exec`, and Linux in Docker. Both sandbox variants are tested on this Mac (Colima) and Docker is also tested in CI on Linux |
 | Concurrency (proposed) | 4 sessions at once on this Mac, one engine subprocess each. `ThreadingHTTPServer`, SQLite in WAL mode with a `busy_timeout` |
 | Resources | Start from the docs' hosting figure: 1 GiB RAM, 5 GiB disk, 1 CPU per agent |
 | Latency (proposed) | The service adds under 50 ms per request on top of the model call |
@@ -223,10 +223,10 @@ The biggest risk is a teaching sandbox that looks safer than it is, so every epi
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Sandbox gives false confidence | Viewers copy it into production | Show known escapes (symlinks, data sent to an allowed domain, which the docs warn about) and a "what it does not stop" list |
-| `sandbox-exec` is deprecated by Apple | The Mac variant may break in a future macOS | Say so on screen; Docker is the variant for real deployment |
+| `sandbox-exec` is deprecated by Apple (its man page says DEPRECATED) | The Mac variant may break in a future macOS | v1.1: Docker is the main sandbox and `sandbox-exec` the second option; say so on screen |
 | Sandboxing the whole engine breaks its tools | Phase B slips | It is in the vertical slice, built before episode 1 is filmed |
-| Hash chain is rewritten whole | Tampering goes unseen | Say the chain only detects partial edits; real systems ship logs to a separate store |
-| Self-reported engine events lie | The audit trail misleads | Mark them `source: engine` and say so on screen |
+| Hash chain is rewritten whole | Tampering goes unseen | v1.1: anchor the newest hash outside the engine's reach, so a whole-file rewrite is caught. Still no protection if the host itself is owned; real systems ship logs to a separate store |
+| Self-reported engine events lie | The audit trail misleads | Mark them `source: engine`, and (v1.1) cross-check them against proxy and service events, flagging any mismatch |
 | Model behaviour varies | One run proves nothing | 5 trials per setup, ranges reported |
 | Scope creep | 13 episodes become 20 | One exit test per episode; the rest goes to a "not built" list |
 | Unread docs pages | Wrong claims on screen | Read them in Phase 0; mark anything unconfirmed |
@@ -259,3 +259,10 @@ These nine decisions were accepted with the PRD on 2026-11-22.
 - **Non-goals:** no web UI, no SSO, no cluster.
 
 Settled: the sandbox runs on both `sandbox-exec` and Docker, since Docker was installed on 2026-11-22. Series 2 has its own public repo.
+
+## 13. Changes in v1.1 (2026-11-24)
+
+- Docker becomes the main sandbox; `sandbox-exec` is the second option.
+- Each known escape is run on screen with the control on and off.
+- R5 gains an anchor for the newest chain hash and a cross-check of engine events.
+- Unconfirmed items found in an audit are listed in the TRD section 15.

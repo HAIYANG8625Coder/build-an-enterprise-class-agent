@@ -1,6 +1,6 @@
 # TRD: agentd, the Enterprise-class Agent Service
 
-Version 1.0 · approved 2026-11-22 · Michael
+Version 1.1 (draft) · v1.0 approved 2026-11-22 · v1.1 changes approved by Michael 2026-11-24
 
 This TRD turns the approved PRD and prototype into a build specification. It fixes the processes, interfaces, data formats and tests. Values marked *proposed* are starting values that Phase 0 may tune.
 
@@ -189,8 +189,10 @@ We assume the engine can be turned against us by a prompt injection, so every co
 | Repository loosens the policy | Project and user allow rules ignored when "Company rules only" is on | A repo `settings.json` with `allow: ["Bash(*)"]` changes nothing |
 | Stolen user token | Tokens hashed at rest; admin revokes; every use is audited | A revoked token gets 401 |
 | Partial log tampering | Hash chain, verified on demand and daily | Edit or delete one line; `verify` names it |
+| Whole-file log rewrite (v1.1) | The service writes the newest chain hash to an anchor the engine can't reach | Replace the whole file with a valid new chain; `verify` reports an anchor mismatch |
+| Engine reports less than it did (v1.1) | Cross-check of engine events against proxy model calls and service decisions | Engine omits a tool event; a `mismatch` audit line appears |
 
-**Not defended.** A full rewrite of the audit log by someone with file access is not caught; real systems ship logs to a separate store. Data sent to an allowed host is not inspected. Kernel or `sandbox-exec` escapes are out of scope.
+**Not defended.** A full rewrite of the audit log is caught only through the anchor (v1.1, section 6); someone who owns the host can rewrite both the log and the anchor, and real systems ship logs to a separate store. Data sent to an allowed host is not inspected. Kernel or `sandbox-exec` escapes are out of scope.
 
 **Sandbox profiles.** Two profiles, generated per session from a template. This is a sketch: the exact SBPL must be tested in Phase 0, because Apple doesn't document it.
 
@@ -397,3 +399,11 @@ Six questions decide details, not the architecture. Phase 0 answers the first th
 - [ ] **Docker socket:** the runner needs Docker to start command containers, and that socket is powerful. Default: give it only to the service, never to engines, and say so in the threat model.
 - [ ] **Streaming format:** NDJSON over chunked HTTP, or server-sent events? Default: NDJSON, since `curl` and the standard library handle it simply.
 - [ ] **Proposed values:** limits in section 10, the 8-hour session token, 60 s dashboard cache, UTC days. Default: accept for Phase 0 and tune from real runs.
+
+**Added in v1.1 (2026-11-24), all unconfirmed until tested**
+
+- [ ] **Anchor:** where does the newest chain hash live (a file outside the sandbox, or a read-only Docker volume)? Default: a file outside `AGENTD_HOME/audit/`, written after every event.
+- [ ] **Docker networking:** services bind to `127.0.0.1` on the Mac, which a container under Colima can't reach. Default: run `keyproxy` in a container on an internal network, test it in Phase 0.
+- [ ] **`sandbox-exec` here:** a test run from the build session was killed (exit 137). Default: re-test from a plain terminal in Phase 0 before relying on it.
+- [ ] **Colima health:** `colima status` did not return in 120 s from the build session, though `docker version` answered. Default: re-check in Phase 0.
+- [ ] **Unread docs pages:** admin-setup, server-managed-settings, managed-mcp, network-config, zero-data-retention, hipaa-setup, the Claude apps gateway pages, plugins/org. Default: read them in Phase 0 and mark each claim.
