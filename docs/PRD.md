@@ -1,15 +1,15 @@
 # PRD: Enterprise-class Agent Service (Series 2)
 
-Version 1.1 (draft) · v1.0 approved 2026-11-22 · v1.1 changes approved by Michael 2026-11-24
+Version 1.2 (draft) · v1.0 approved 2026-11-22 · v1.1 changes approved by Michael 2026-11-24 · v1.2 changes approved by Michael 2026-11-25
 
-This PRD defines a multi-user agent service built around the series 1 agent. This is version 1.0, approved on 2026-11-22. Nothing in it is built yet.
+This PRD defines a multi-user agent service built around the series 1 agent. Version 1.0 was approved on 2026-11-22; sections 13 and 14 list the later changes. The service is not finished: what has been built and tried is in the repo's `ep01/` and `slice/` folders.
 
 | Field | Value |
 | --- | --- |
 | Product | Enterprise-class Agent Service, the subject of series 2 「从零做企业级 Agent」 |
-| Version | 1.1 draft (v1.0 approved 2026-11-22) |
+| Version | 1.2 draft (v1.0 approved 2026-11-22) |
 | Owner | Michael (product, video) |
-| Status | Approved 2026-11-22, together with the TRD and the prototype. Phase 0 is next |
+| Status | Approved 2026-11-22, together with the TRD and the prototype. Phase 0 done 2026-11-25 |
 | Code | Public repo `HAIYANG8625Coder/build-an-enterprise-class-agent` (PRD, TRD and prototype; code starts in Phase 0) |
 | Related docs | [TRD](TRD.md) (build specification), [prototype](../prototype/) (clickable screens) |
 
@@ -99,11 +99,11 @@ Eight requirements define "enterprise-class" here. Each is done only when its ac
 | ID | Requirement | Behaviour | Acceptance test | Priority | Episode |
 | --- | --- | --- | --- | --- | --- |
 | R1 | Identity | Every request carries a token. Tokens are hashed in SQLite, each with a user, a tenant and a role (`user` or `admin`) | No token or a revoked token gets 401. A token reads only its own sessions. A user token cannot change the policy. Every audit event has a user id | P0 must have | 1 |
-| R2 | Policy | Managed rules load before project and user rules. Order: deny, then ask, then allow. Lock flags `allow_managed_rules_only` and `disable_bypass` | A managed deny beats a user allow. A repo file that tries to loosen the policy is ignored. A red-team set (5 runs per case) shows the policy holds | P0 must have | 2, 3 |
-| R3 | Isolation | The whole engine process runs in a sandbox: writes only in the tenant folder, no reads of the db, audit log or key file. Commands get a stricter profile with no network | `touch ../x` fails. `curl blocked.example` fails. Reading `~/.ssh` fails. The engine's `read_file` on the db fails. Tenant A can't reach tenant B by path, symlink or memory | P0 must have | 4, 6 |
+| R2 | Policy | Managed rules load before project and user rules. Order: deny, then ask, then allow. Lock flags `allow_managed_rules_only` and `disable_bypass` | A managed deny beats a user allow. A repo file that tries to loosen the policy is ignored, and the engine runs no hooks from it (v1.2). `Read` rules also cover `grep` (v1.2). A red-team set (5 runs per case) shows the policy holds | P0 must have | 2, 3 |
+| R3 | Isolation | The whole engine process runs in a sandbox: writes only in the tenant folder, no reads of the db, audit log or key file. Each command is started by the service in a stricter profile with no network (v1.2) | `touch ../x` fails. `curl blocked.example` fails. Reading `~/.ssh` fails. The engine's `read_file` on the db fails. Tenant A can't reach tenant B by path, symlink or memory | P0 must have | 4, 6 |
 | R4 | Secrets | The engine gets a per-session token, never the key. The proxy checks the token and adds the key | The key is not in the engine's environment or any file it can read. A wrong or expired session token is refused. `curl localhost:<proxy port>` from a command fails | P0 must have | 5 |
 | R5 | Audit | One event per request, model call, tool call and decision, hash-chained. Service and proxy write the log; engine events are marked `source: engine` | `verify_audit.py` detects a removed or edited line. The newest chain hash is also written to an anchor outside the engine's reach, so a whole-file rewrite is detected too (v1.1). A cross-check compares the engine's reported tool calls with what the service and proxy saw, and flags a mismatch (v1.1). The engine can't open the log. Prompt and tool content are off by default | P0 must have | 7 |
-| R6 | Cost | The proxy prices each call from `usage` and keeps a per-user daily total. It refuses the call that would cross the cap | A run that crosses the cap stops with a clear message. The overshoot is at most one call | P0 must have | 8 |
+| R6 | Cost | The proxy prices each call from `usage` and keeps a per-user daily total. It refuses the call that would cross the cap, refuses all calls when its store fails, and keeps an estimate when usage never arrives (v1.2) | A run that crosses the cap stops with a clear message. The overshoot is at most one call | P0 must have | 8 |
 | R7 | Reliability | Timeouts at three levels (model call, turn, session), retry with back-off on 429 and 5xx, saved sessions, approvals over HTTP with a timeout that denies | Kill the process mid-task, resume, finish. An unanswered approval is denied after its timeout (fake clock) | P1 should have | 10, 11 |
 | R8 | Release gate | CI runs the no-key checks on every push and the real evals on a schedule. pass^k is the gate | A change that breaks a check can't merge. Each failed eval saves its trace | P1 should have | 9 |
 
@@ -133,7 +133,7 @@ A small service wraps the unchanged ep13 engine. Whatever enforces a rule sits o
 
 ![architecture · trusted side and sandbox](images/prd-architecture.png)
 
-The engine reaches only the proxy, and only with its session token. Commands run one level deeper and can't reach even the proxy (red, dashed). Tools and permission decisions happen inside the engine, so their audit events are marked as reported by the engine.
+The engine reaches only the proxy, and only with its session token. Commands can't reach even the proxy (red, dashed). Since v1.2 the service starts them, outside the engine's sandbox; the picture still shows them one level inside it. Tools and permission decisions happen inside the engine, so their audit events are marked as reported by the engine.
 
 ## 7a. Product screens
 
@@ -155,7 +155,7 @@ A request nobody answers is denied, so an unattended run can never approve itsel
 
 ![screen 3 · admin console (R1, R2, R6)](images/screen-3-admin-console.png)
 
-With "Company rules only" on, the allow rules from the project and from the user are struck out. A change takes effect only after the admin publishes it, and the publish is logged.
+With "Company rules only" on, the allow rules from the project and from the user are struck out. Since v1.2, allow rules in files the agent can write are ignored even when it is off. A change takes effect only after the admin publishes it, and the publish is logged.
 
 **Audit log.** The auditor answers "who did what, and was it allowed" and proves the log wasn't edited.
 
@@ -266,3 +266,13 @@ Settled: the sandbox runs on both `sandbox-exec` and Docker, since Docker was in
 - Each known escape is run on screen with the control on and off.
 - R5 gains an anchor for the newest chain hash and a cross-check of engine events.
 - Unconfirmed items found in an audit are listed in the TRD section 15.
+
+## 14. Changes in v1.2 (2026-11-25)
+
+Four changes from Phase 0, where each problem was shown by running it (`ep01/tests/probes/`) or found in the docs.
+
+- **C1:** the service starts every command, outside the engine's sandbox. macOS can't put a sandbox inside a sandbox.
+- **C2:** the engine loads no hooks or rules from the project or user folder, and `allow` rules in files the agent can write are ignored.
+- **C3:** one rule name per kind of action: `Read` (also `grep`), `Edit`, `Bash`.
+- **C4:** the proxy refuses calls when its store fails, and keeps a cost estimate when a call ends without usage.
+

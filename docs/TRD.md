@@ -1,6 +1,6 @@
 # TRD: agentd, the Enterprise-class Agent Service
 
-Version 1.1 (draft) · v1.0 approved 2026-11-22 · v1.1 changes approved by Michael 2026-11-24
+Version 1.2 (draft) · v1.0 approved 2026-11-22 · v1.1 changes approved by Michael 2026-11-24 · v1.2 changes (C1 to C4, from Phase 0) approved by Michael 2026-11-25
 
 This TRD turns the approved PRD and prototype into a build specification. It fixes the processes, interfaces, data formats and tests. Values marked *proposed* are starting values that Phase 0 may tune.
 
@@ -21,7 +21,7 @@ Every PRD requirement is met by a component outside the sandbox. The engine is n
 | --- | --- | --- | --- |
 | R1 | Identity | Service: bearer token lookup, roles | `test_identity.py` |
 | R2 | Policy | Service policy engine; the engine asks the service before every tool call | `test_policy.py`, red-team set |
-| R3 | Isolation | Sandbox profile around the engine, stricter profile for commands, per-tenant folders | `test_sandbox.py`, `test_tenancy.py` |
+| R3 | Isolation | Sandbox profile around the engine, a stricter one around each command (started by the runner), per-tenant folders | `test_sandbox.py`, `test_tenancy.py` |
 | R4 | Secrets | Credential proxy holds the key; engine gets a session token | `test_secrets.py` |
 | R5 | Audit | Audit writer in the service and the proxy, hash chain | `test_audit.py`, `verify_audit.py` |
 | R6 | Cost | Credential proxy: budget check before each model call | `test_budget.py` |
@@ -34,7 +34,9 @@ Four processes run outside the sandbox and hold everything that enforces a rule:
 
 ![architecture · processes, ports and the trust boundary](images/trd-architecture.png)
 
-The engine talks to `agentd` only over its stdin and stdout (the control channel), and to `keyproxy` only with its session token. Commands run one level deeper with no network, except through `egress` to hosts the policy allows (dashed).
+The engine talks to `agentd` only over its stdin and stdout (the control channel), and to `keyproxy` only with its session token. Commands are started by the runner, outside the engine's sandbox, each in a sandbox of its own with no network, except through `egress` to hosts the policy allows (dashed).
+
+*v1.2: in the picture, read the arrow "runs" as: the engine asks, the runner in `agentd` starts the command.*
 
 ## 3. Components
 
@@ -50,7 +52,11 @@ The system is four long-running processes plus one engine process per session. T
 | Store | SQLite file, WAL mode | Users, tokens, sessions, approvals, budgets, policy versions | `store.py` only; no other component opens it | `data/agentd.db` |
 | Client | `agentctl` CLI, `curl` | User and admin commands | Service HTTP API | `client/agentctl.py` |
 
-**Control channel.** The engine and the runner exchange one JSON object per line. The engine sends `tool_request`, `tool_result`, `text`, `done` and `error`. The runner answers each `tool_request` with `{"type":"decision","id":…,"value":"allow"|"deny","reason":…}`. The engine never decides permissions itself, so a compromised engine can only skip asking. The sandbox still stops what a skipped check would have allowed.
+**Control channel.** The engine and the runner exchange one JSON object per line. The runner sends `start`. The engine sends `tool_request`, `run`, `tool_result`, `text`, `done` and `error`. The runner answers each `tool_request` with `{"type":"decision","id":…,"value":"allow"|"deny","reason":…}`.
+
+**Commands (v1.2, C1).** The engine never starts a command. After an `allow` it sends `{"type":"run","id":…}`, and the runner runs the command **it approved under that id**, once, in the command sandbox, and answers `{"type":"output",…}`. A different command text from the engine has no way in. macOS refuses a sandbox inside a sandbox (`sandbox_apply: Operation not permitted`, Phase 0), and a command the engine starts itself would keep the engine's access to the proxy.
+
+**No local rules (v1.2, C2).** The engine loads no hooks, no permission rules, no memory, skills or MCP servers from the project or the user folder. It never decides permissions itself, so a compromised engine can only skip asking. The sandbox still stops what a skipped check would have allowed: the engine can write its tenant folder and reach the proxy, and nothing else.
 
 ## 4. Main request flow
 
@@ -183,10 +189,13 @@ We assume the engine can be turned against us by a prompt injection, so every co
 | --- | --- | --- |
 | Prompt injection asks the agent to send a secret out | Company deny rules; commands have no network; the egress allow-list for allowed hosts | Red-team file asks for `curl` with `~/.ssh/id_rsa`; expect deny and no outbound connection |
 | Engine reads the API key | Key only in `data/key`, mode 0600, outside the engine's sandbox; engine env has a session token only | Grep the engine's environment and every readable file for the key |
-| Command spends the key through the local proxy | Command profile blocks all network, loopback included; proxy requires a session token | `curl 127.0.0.1:8701` from `run_bash` fails |
+| Command spends the key through the local proxy | The runner starts commands in a profile that blocks all network, loopback included; commands get no session token; proxy requires one | `curl 127.0.0.1:8701` from `run_bash` fails |
 | Engine edits the audit log or the database | Both paths are outside the engine's readable and writable set | Engine `read_file` and `write_file` on them fail |
 | Tenant A reads tenant B | Engine profile allows only its own tenant folder; paths resolved with `realpath` | Path, `..`, symlink and memory-file escapes all fail |
-| Repository loosens the policy | Project and user allow rules ignored when "Company rules only" is on | A repo `settings.json` with `allow: ["Bash(*)"]` changes nothing |
+| Repository loosens the policy or runs a command (v1.2) | Allow rules in files inside the tenant folder are always ignored; the engine runs no hooks | A repo `settings.json` with `allow: ["Bash(*)"]` changes nothing; a repo hook file never runs |
+| Engine makes the provider reach the internet (v1.2) | The proxy accepts only plain requests: no server tools, no URL sources, no extra fields | Each is refused with 400 and nothing is sent |
+| A read rule dodged through `grep` (v1.2) | `Read` rules cover every tool that shows file content | A denied file is not shown by `grep` over its folder |
+| Spend or calls go unrecorded (v1.2) | The proxy refuses calls when its store fails and keeps an estimate when usage never arrives | Break the store: no upstream call. Cut a call off: an estimate is recorded |
 | Stolen user token | Tokens hashed at rest; admin revokes; every use is audited | A revoked token gets 401 |
 | Partial log tampering | Hash chain, verified on demand and daily | Edit or delete one line; `verify` names it |
 | Whole-file log rewrite (v1.1) | The service writes the newest chain hash to an anchor the engine can't reach | Replace the whole file with a valid new chain; `verify` reports an anchor mismatch |
@@ -206,11 +215,13 @@ We assume the engine can be turned against us by a prompt injection, so every co
 (allow file-write* (subpath (param "TENANT_DIR")) (subpath (param "TMP_DIR")))
 (allow network-outbound (remote ip "localhost:8701"))   ; credential proxy only
 
-; command.sb, used by run_bash inside the engine
-; same as engine.sb, but with no network rule at all
+; command.sb, around one command, applied by the runner (v1.2)
+; like engine.sb, but no network rule at all and no read of the engine or SDK folders
 ```
 
-On Linux the same split uses Docker. Engine container flags: `--cap-drop ALL --read-only --user 1000:1000 --security-opt no-new-privileges --tmpfs /tmp`, mounting only the tenant folder, on a network that reaches only `keyproxy`. Network is set per container, so each command runs in its own short-lived container (`docker run --rm --network none`, same flags, same tenant folder). The engine container therefore needs a way to start it: the runner starts command containers on the engine's behalf over the control channel, and the engine never gets the Docker socket.
+On Linux the same split uses Docker. Engine container flags: `--cap-drop ALL --read-only --user 1000:1000 --security-opt no-new-privileges --tmpfs /tmp`, mounting only the tenant folder, on a network that reaches only `keyproxy`. Network is set per container, so each command runs in its own short-lived container (`docker run --rm --network none`, same flags, same tenant folder). The runner starts it, as on the Mac, and the engine never gets the Docker socket.
+
+The tested `sandbox-exec` profiles are in `slice/sandbox/`; the sketch above leaves out the system paths Python needs.
 
 **Tokens.** User tokens are 32 random bytes (`secrets.token_urlsafe`), shown once, and stored as SHA-256. Session tokens are created per session, expire with the session (8 hours at most, *proposed*), and are deleted when it stops.
 
@@ -220,9 +231,19 @@ On Linux the same split uses Docker. Engine container flags: `--cap-drop ALL --r
 
 The service decides every tool call with one function, `decide(user, project, tool, args)`, from three rule sources. The company policy can't be loosened by the other two.
 
-**Rule syntax.** `Tool(pattern)`, extending the ep4 `Permissions` class. `Tool` is `Read`, `Edit`, `Write` or `Bash`, and the pattern is a glob on the path or on the command line. Examples from the prototype: `Bash(curl *)`, `Read(~/.ssh/**)`, `Edit(*)`.
+**Rule syntax.** `Tool(pattern)`, extending the ep4 `Permissions` class. The pattern is a glob on the path (relative to the project) or on the command line. Examples from the prototype: `Bash(curl *)`, `Read(~/.ssh/**)`, `Edit(*)`.
 
-**Sources.** Company rules come from the policy version in SQLite, project rules from `<project>/.agent/settings.json` and user rules from `tenants/<tenant>/<user>/.agent/settings.json`.
+**Names (v1.2, C3).** One name covers every engine tool that does the same kind of thing. There is no `Write`: the engine has no separate write tool.
+
+| Rule name | Engine tools | The pattern matches |
+| --- | --- | --- |
+| `Read` | `read_file`, `grep` | each file the call can show; `grep` on a folder is checked file by file |
+| `Edit` | `edit_file` | the file |
+| `Bash` | `run_bash` | the whole command and each part split at `&&`, `\|\|`, `;`, `\|` |
+
+A rule with any other name is an error when it is loaded, not a rule that silently matches nothing. A tool with no rule name is denied, and so is a path outside the project.
+
+**Sources.** Company rules come from the policy version in SQLite, project rules from `<project>/.agent/settings.json` and user rules from `tenants/<tenant>/<user>/.agent/settings.json`. **v1.2 (C2):** both files sit in a folder the agent can write, so only their `deny` and `ask` rules count. Their `allow` rules are always ignored. Allow rules for one user, if ep 2 adds them, are stored by the service.
 
 **Evaluation**
 
@@ -240,7 +261,7 @@ def decide(rules, locks, tool, args):
     return "ask", None                                        # no rule: ask a person
 ```
 
-**Locks.** `company_rules_only` drops allow rules that don't come from the company. `disable_bypass` refuses any session that asks to run tools without asking. Both live in the policy body, so changing them is a new version.
+**Locks.** `company_rules_only` drops allow rules that don't come from the company (since v1.2 it only matters for rules the service stores). `disable_bypass` refuses any session that asks to run tools without asking. Both live in the policy body, so changing them is a new version.
 
 **Versions.** `PUT /policy` carries `base_version`. The service rejects a stale base with 409, stores the new body as the next version, writes an audit event and applies it from each session's next tool call. A running tool call is not interrupted.
 
@@ -251,6 +272,8 @@ def decide(rules, locks, tool, args):
 The proxy reserves the worst-case cost of a call before sending it and settles the real cost afterwards. So a member can never pass their cap by more than the gap between a call's estimate and its real cost.
 
 **Prices.** `config/pricing.json` maps the pinned model to USD per million input and output tokens. The values are copied from the provider's price page at setup and dated. The cost shown is an estimate, as the docs say for Claude Code too.
+
+**When in doubt, refuse or count (v1.2, C4).** If the store can't be read or written, the proxy returns 503 and sends nothing upstream. If a call is sent and no usage comes back (timeout, dropped connection, stopped stream), the reservation is settled as an estimate and marked `estimated`. For comparison, the Claude apps gateway docs (read 2026-11-25) say its spend enforcement lets requests through by default when its database is down.
 
 **Check before each call** (in `keyproxy`, inside one SQLite transaction)
 
@@ -389,21 +412,24 @@ build-an-enterprise-class-agent/
 6. `audit.py` with the chain and `verify_audit.py`.
 7. One real run on DeepSeek through all of it, end to end.
 
+**Done 2026-11-25** in `slice/` (all seven steps, results and limits in its README). Choices it settled or added: the stream is NDJSON; the anchor is the file `AGENTD_HOME/anchor`; the proxy accepts only a plain Messages request (no provider server tools, no picture by URL, pinned model, no streaming yet), so a hijacked engine can't make the provider reach the internet for it; one turn is limited to 200 tool requests and 1,000 messages. The slice is about 1,150 new lines, against the proposed 1,500 for the whole series, so that target needs another look after Phase A.
+
 ## 15. Open technical questions
 
 Six questions decide details, not the architecture. Phase 0 answers the first three by experiment.
 
-- [~] **Seatbelt profile (probe tested 2026-11-24; needs `(literal "/")` to start; real engine untested):** can the Python engine start and import its packages under `(deny default)` with only the paths in section 7? Default: test in Phase 0, widen only the paths that fail, and list each one.
+- [x] **Seatbelt profile (answered 2026-11-25: the real engine runs under `(deny default)`; the paths are listed in `ep01/README.md`, not yet cut to the minimum):** can the Python engine start and import its packages under `(deny default)` with only the paths in section 7? Default: test in Phase 0, widen only the paths that fail, and list each one.
 - [x] **Loopback rule (answered 2026-11-24: yes, one port can be allowed):** does `sandbox-exec` allow one loopback port while blocking others? If not, the proxy listens on a Unix socket inside the tenant's temp folder instead.
 - [x] **DeepSeek usage fields (checked 2026-11-24: present in plain, streamed and tool calls):** does every response carry input and output token counts in the Anthropic shape? Default: check in Phase 0; if not, the proxy counts from the response text and marks spend as estimated.
+- [ ] **Engine dependencies (v1.2):** the SDK sits under the home folder on this Mac. The engine gets its own virtual environment so that no path under home is readable.
 - [ ] **Docker socket:** the runner needs Docker to start command containers, and that socket is powerful. Default: give it only to the service, never to engines, and say so in the threat model.
-- [ ] **Streaming format:** NDJSON over chunked HTTP, or server-sent events? Default: NDJSON, since `curl` and the standard library handle it simply.
+- [x] **Streaming format (NDJSON, built in the slice):** NDJSON over chunked HTTP, or server-sent events? Default: NDJSON, since `curl` and the standard library handle it simply.
 - [ ] **Proposed values:** limits in section 10, the 8-hour session token, 60 s dashboard cache, UTC days. Default: accept for Phase 0 and tune from real runs.
 
 **Added in v1.1 (2026-11-24), all unconfirmed until tested**
 
-- [ ] **Anchor:** where does the newest chain hash live (a file outside the sandbox, or a read-only Docker volume)? Default: a file outside `AGENTD_HOME/audit/`, written after every event.
+- [x] **Anchor (a file, `AGENTD_HOME/anchor`, built in the slice):** where does the newest chain hash live (a file outside the sandbox, or a read-only Docker volume)? Default: a file outside `AGENTD_HOME/audit/`, written after every event.
 - [x] **Docker networking (checked 2026-11-24):** on the default network a container under Colima CAN reach host services on `127.0.0.1` through `host.docker.internal`, including `agentd`. Rule: engine and command containers run only on a Docker `--internal` network (tested: reaches a peer by name, no internet, no host); `keyproxy` runs as a container on it.
 - [x] **`sandbox-exec` here (checked 2026-11-24):** works. The earlier failure was a bad test. A Python 3.9 probe starts under `(deny default)` and is confined as in section 7; the real engine is still untested.
 - [x] **Colima health (checked 2026-11-24):** `colima list` shows Running and `docker run` works. `colima status` itself hangs; use `colima list`.
-- [ ] **Unread docs pages:** admin-setup, server-managed-settings, managed-mcp, network-config, zero-data-retention, hipaa-setup, the Claude apps gateway pages, plugins/org. Default: read them in Phase 0 and mark each claim.
+- [x] **Docs pages (read 2026-11-24 and 2026-11-25):** the enterprise pages of v1.0, then the Claude apps gateway overview, spend limits, deployment security and outage parts, and plugins for organizations. Not every part of the configuration reference was read.
