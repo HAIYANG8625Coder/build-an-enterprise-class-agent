@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "deny": [
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Read(.env)",
+      "Read(*/.env)"
+    ],
+    "ask": [
+      "Edit(*)"
+    ],
+    "allow": [
+      "Read(*)",
+      "Bash(ls *)",
+      "Bash(python3 -m unittest *)",
+      "Bash(python3 tests/*)"
+    ]
+  },
+  "locks": {
+    "company_rules_only": true
+  }
+}

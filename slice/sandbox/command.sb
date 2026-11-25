@@ -1,0 +1,20 @@
+; command.sb: the sandbox around one shell command (macOS, sandbox-exec). Parameter: TENANT.
+; No network rule at all, so a command cannot reach our own proxy on the loopback either.
+; It cannot be started from inside engine.sb (macOS refuses a sandbox inside a sandbox), so the runner, which is
+; outside, has to start commands. See ../../ep01/tests/probes/seatbelt_probe.py.
+(version 1)
+(deny default)
+
+(allow process-fork process-exec)
+(allow signal (target same-sandbox))
+(allow sysctl-read)
+
+(allow file-read* (literal "/"))
+(allow file-read*
+  (subpath "/bin") (subpath "/usr") (subpath "/System") (subpath "/Library/Developer/CommandLineTools")
+  (subpath "/private/etc") (subpath "/dev") (subpath "/private/var/select") (subpath "/private/var/db"))
+(allow file-read* (subpath (param "TENANT")))
+(allow file-read-metadata
+  (path-ancestors "/Library/Developer/CommandLineTools") (path-ancestors (param "TENANT")))
+
+(allow file-write* (subpath (param "TENANT")) (literal "/dev/null"))

@@ -4,10 +4,10 @@
 
 **Series 2 of "Build your own agent": what changes when many people use one agent.**
 
-Status: **design approved (v1.0, 2026-11-22)**. The PRD, the TRD and a clickable prototype are done. No service code is built yet; Phase 0 is next.
+Status: **design v1.2 (2026-11-25)**. Phase 0 is done ([`ep01/`](ep01/)) and a first end-to-end path works ([`slice/`](slice/)): token, policy, sandboxed engine, key proxy, audit chain. It is not a finished service, and no episode code is final.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Status: design approved](https://img.shields.io/badge/status-design%20approved%20v1.0-green)
+![Status: first slice](https://img.shields.io/badge/status-first%20end--to--end%20slice-yellow)
 
 </div>
 
@@ -15,7 +15,7 @@ Status: **design approved (v1.0, 2026-11-22)**. The PRD, the TRD and a clickable
 
 This series rebuilds the smallest honest version of each of those pieces on top of the finished series 1 agent, tests it with real runs, and compares it with what the official Claude Code docs say Claude Code does.
 
-## Design documents (v1.0)
+## Design documents (v1.2)
 
 | Document | What it holds |
 | --- | --- |
