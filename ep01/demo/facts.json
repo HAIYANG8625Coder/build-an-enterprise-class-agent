@@ -1,0 +1,58 @@
+{
+ "crossover": {
+  "naive": {
+   "trials": 5,
+   "answers": 10,
+   "got_own": 5,
+   "saw_other": 5,
+   "lin_answered_with_sams": 5,
+   "lin_noted_wrong_folder": 2
+  },
+  "process": {
+   "trials": 5,
+   "answers": 10,
+   "got_own": 10,
+   "saw_other": 0,
+   "lin_answered_with_sams": 0,
+   "lin_noted_wrong_folder": 0
+  }
+ },
+ "escape": {
+  "process": {
+   "trials": 5,
+   "got_sams_file": 1,
+   "tried_a_command": 1,
+   "file_tool_refused_then_stopped": 4
+  }
+ },
+ "resume": {
+  "kept": {
+   "trials": 5,
+   "remembered": 5,
+   "said_it_did_not_know": 0,
+   "gave_the_codename_instead": 0,
+   "tool_calls_after": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "lost": {
+   "trials": 5,
+   "remembered": 0,
+   "said_it_did_not_know": 3,
+   "gave_the_codename_instead": 2,
+   "tool_calls_after": [
+    6,
+    15,
+    5,
+    10,
+    11
+   ]
+  }
+ },
+ "failed_requests": 0,
+ "tokens_read": 138384
+}

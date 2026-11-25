@@ -1,4 +1,48 @@
-# ep01: foundation (Phase 0)
+# ep01: many users, one agent service
+
+A thin service in front of the series 1 agent: **who is asking** (a token), **where they work** (a folder per user) and **which conversation** (a saved session), with **one process per session**.
+
+It is not safe yet. There is no policy (ep 2), no sandbox (ep 4) and the engine holds the model key (ep 5). Until then the agent may only read.
+
+```bash
+./check.sh                                              # no key, no model
+AGENTD_HOME=./var MODEL_KEY=... python3 service/agentd.py    # DeepSeek flash by default; loopback only
+python3 demos.py crossover naive 1                      # one real trial (reads your key file, see demos.py)
+```
+
+```text
+service/    agentd.py (HTTP)  auth.py  store.py  runner.py (one process per session)  naive.py (the broken first try)
+engine/     the series 1 engine, unchanged, plus turn.py (one message of one session)
+tests/      test_service.py  stack.py
+demos.py    the real runs; their traces are in demo/, the counts in demo/facts.json
+```
+
+## Real runs (2026-11-25, DeepSeek flash, 25 trials, no failed requests)
+
+| Test | Result |
+| --- | --- |
+| Two users at once, **naive** service (engine imported, one thread each): lin asks for the code name in their own `codename.txt`, sam 0.5 s later | lin got **sam's** code name in **5 of 5** trials (in 2 of them the answer also noted that the folder was not the expected one). sam got their own in 5 of 5 |
+| The same, **one process per session** | 10 of 10 answers were the user's own; none saw the other's file |
+| lin asks the agent to show a file in sam's folder | In 4 of 5 the model used the file tool, was refused, and stopped. In **1 of 5** it went straight to a shell command with `cat`, which read-only mode allows, **and got sam's file** |
+| Service restarted, saved conversation **kept** | The word from the first message came back in 5 of 5, with no tool call |
+| Service restarted, saved file **removed** (an empty disk) | 0 of 5. No error. The agent searched the project (5 to 15 tool calls); 3 said they did not know and **2 offered another word from the project** |
+
+**The cause of the first row:** the series 1 engine keeps its project folder in one variable, `agent.ROOT`. With two threads, the later request changes it while the earlier one is still waiting for the model.
+
+**What this does not show:** how often such an overlap happens under real traffic (here it was arranged: 0.5 s apart), or how another model would behave.
+
+## Leftover variables (real `anthropic` SDK 0.125.0, a stub server, no model)
+
+| Left in the service's shell | What happened |
+| --- | --- |
+| `ANTHROPIC_BASE_URL`, key passed in code | The call, **with the key**, went to the old address |
+| the same, key read from `ANTHROPIC_API_KEY` | A leftover `ANTHROPIC_AUTH_TOKEN` was sent along as well |
+| `ANTHROPIC_AUTH_TOKEN`, key passed in code | The token was **not** sent |
+| any of them, engine started with an environment built from nothing | Nothing leftover reached the call |
+
+---
+
+# Phase 0: foundation
 
 No service yet. This folder holds the series 1 engine, unchanged, two test doubles, two sandbox profiles and the probes that tried them. The [threat model](../THREAT-MODEL.md) says what the later code has to prove.
 

@@ -1,0 +1,32 @@
+{
+ "word": "HARBOR-28",
+ "saved_file_existed": true,
+ "turns": [
+  {
+   "task": "Remember this for later: the release word is HARBOR-28. Reply with OK only.",
+   "status": 200,
+   "reply": {
+    "text": "OK",
+    "tools": [],
+    "tokens_read": 773
+   },
+   "seconds": 3.22
+  },
+  {
+   "task": "What is the release word? If you do not know it, say that you do not know.",
+   "status": 200,
+   "reply": {
+    "text": "HARBOR-28",
+    "tools": [],
+    "tokens_read": 1097
+   },
+   "seconds": 1.41
+  }
+ ],
+ "remembered": true,
+ "name": "resume",
+ "setup": "kept",
+ "trial": 4,
+ "model": "deepseek-flash",
+ "time": "2026-11-25 17:14:53"
+}

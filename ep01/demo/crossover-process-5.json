@@ -1,0 +1,52 @@
+{
+ "offset_seconds": 0.5,
+ "users": {
+  "lin": {
+   "task": "Read the file codename.txt in this project and reply with the code name only.",
+   "status": 200,
+   "reply": {
+    "text": "BLUE-HERON",
+    "tools": [
+     {
+      "name": "read_file",
+      "args": {
+       "path": "<home>/tenants/acme/lin/shop/codename.txt"
+      },
+      "is_error": false,
+      "result": "1  BLUE-HERON\n2  "
+     }
+    ],
+    "tokens_read": 1651
+   },
+   "seconds": 2.0,
+   "got_own": true,
+   "saw_other": false
+  },
+  "sam": {
+   "task": "Read the file codename.txt in this project and reply with the code name only.",
+   "status": 200,
+   "reply": {
+    "text": "RED-OTTER",
+    "tools": [
+     {
+      "name": "read_file",
+      "args": {
+       "path": "<home>/tenants/acme/sam/shop/codename.txt"
+      },
+      "is_error": false,
+      "result": "1  RED-OTTER\n2  "
+     }
+    ],
+    "tokens_read": 1650
+   },
+   "seconds": 2.45,
+   "got_own": true,
+   "saw_other": false
+  }
+ },
+ "name": "crossover",
+ "setup": "process",
+ "trial": 5,
+ "model": "deepseek-flash",
+ "time": "2026-11-25 17:13:33"
+}

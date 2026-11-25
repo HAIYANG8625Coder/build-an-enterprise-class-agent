@@ -10,6 +10,8 @@ out=$(python3 engine/test_repl.py </dev/null) || { echo "$out"; exit 1; }
 echo "$out" | tail -1
 echo "== fake model and fake clock"
 python3 tests/test_fakes.py </dev/null
+echo "== episode 1: identity, sessions, two users at once"
+python3 tests/test_service.py </dev/null
 if [ "$1" = "probes" ]; then
   echo "== gaps in the series 1 engine"
   python3 tests/probes/engine_gaps.py </dev/null

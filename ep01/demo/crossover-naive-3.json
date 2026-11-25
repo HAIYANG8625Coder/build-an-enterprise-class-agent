@@ -1,0 +1,60 @@
+{
+ "offset_seconds": 0.5,
+ "users": {
+  "sam": {
+   "task": "Read the file codename.txt in this project and reply with the code name only.",
+   "status": 200,
+   "reply": {
+    "text": "RED-OTTER",
+    "tools": [
+     {
+      "name": "read_file",
+      "args": {
+       "path": "codename.txt"
+      },
+      "is_error": false,
+      "result": "1  RED-OTTER\n2  "
+     }
+    ],
+    "tokens_read": 2386
+   },
+   "seconds": 1.45,
+   "got_own": true,
+   "saw_other": false
+  },
+  "lin": {
+   "task": "Read the file codename.txt in this project and reply with the code name only.",
+   "status": 200,
+   "reply": {
+    "text": "RED-OTTER",
+    "tools": [
+     {
+      "name": "run_bash",
+      "args": {
+       "command": "ls -la"
+      },
+      "is_error": false,
+      "result": "exit code 0\ntotal 80\ndrwxr-xr-x@ 15 <user>  staff  480 Nov 25 17:13 .\ndrwxr-xr-x@  4 <user>  staff  128 Nov 25 17:13 ..\n-rw-r--r--@  1 <user>  staff   39 Nov 25 16:35 CHANGELOG.md\n-rw-r--r--@  1 <user>  staff  105 Nov 25 16:35 NOTES.md\n-rw-r--r--@  1 <user>  staff  180 Nov 25 16:35 README.md\n-rw-r--r--@  1 <user>  staff  342 Nov 25 16:35 cart.py\n-rw-r--r--@  1 <user>  staff  272 Nov 25 16:35 cli.py\n-rw-r--r--@  1 <user>  staff   10 Nov 25 17:13 codename.txt\n-rw-r--r--@  1 <user>  staff "
+     },
+     {
+      "name": "read_file",
+      "args": {
+       "path": "codename.txt"
+      },
+      "is_error": false,
+      "result": "1  RED-OTTER\n2  "
+     }
+    ],
+    "tokens_read": 3648
+   },
+   "seconds": 1.98,
+   "got_own": false,
+   "saw_other": true
+  }
+ },
+ "name": "crossover",
+ "setup": "naive",
+ "trial": 3,
+ "model": "deepseek-flash",
+ "time": "2026-11-25 17:13:05"
+}
