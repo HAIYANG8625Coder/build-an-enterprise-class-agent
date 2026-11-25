@@ -1,0 +1,26 @@
+; engine.sb: the sandbox around one whole engine process (macOS, sandbox-exec).
+; Parameters: ENGINE (the engine and test code, read only), DEPS (the folder holding the anthropic SDK, read only),
+; TENANT (the one folder the engine may write), PROXY ("localhost:<port>", the only address it may connect to).
+; tests/probes/seatbelt_probe.py runs it and tries to break it.
+(version 1)
+(deny default)
+
+(allow process-fork process-exec)
+(allow signal (target same-sandbox))
+(allow sysctl-read)
+
+; "/" itself, so that Python can start. This does not allow anything below it.
+(allow file-read* (literal "/"))
+; the system: shell, tools, Python, system libraries, certificates
+(allow file-read*
+  (subpath "/bin") (subpath "/usr") (subpath "/System") (subpath "/Library/Developer/CommandLineTools")
+  (subpath "/private/etc") (subpath "/dev") (subpath "/private/var/select") (subpath "/private/var/db"))
+(allow file-read* (subpath (param "ENGINE")) (subpath (param "DEPS")) (subpath (param "TENANT")))
+; finding a path needs the metadata (not the content, not a listing) of every folder above it
+(allow file-read-metadata
+  (path-ancestors "/Library/Developer/CommandLineTools")
+  (path-ancestors (param "ENGINE")) (path-ancestors (param "DEPS")) (path-ancestors (param "TENANT")))
+
+(allow file-write* (subpath (param "TENANT")) (literal "/dev/null"))
+
+(allow network-outbound (remote ip (param "PROXY")))
