@@ -4,7 +4,7 @@
 
 **Series 2 of "Build your own agent": what changes when many people use one agent.**
 
-Status: **design v1.2 (2026-11-25)**. **Episode 1** (many users, one agent service) is in [`ep01/`](ep01/), with its real test runs. A first end-to-end path of the later design is in [`slice/`](slice/): token, policy, sandboxed engine, key proxy, audit chain. It is not a finished service.
+Status: **design v1.2 (2026-11-25)**. **Episode 1** (many users, one agent service) is in [`ep01/`](ep01/), with its real test runs. **Episode 2** (a policy nobody can switch off) is in [`ep02/`](ep02/), with its real runs and what it does not stop yet. A first end-to-end path of the later design is in [`slice/`](slice/): token, policy, sandboxed engine, key proxy, audit chain. It is not a finished service.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Status: first slice](https://img.shields.io/badge/status-first%20end--to--end%20slice-yellow)

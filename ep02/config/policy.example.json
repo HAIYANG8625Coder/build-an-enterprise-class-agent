@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "deny": [
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Read(config/secrets.env)"
+    ],
+    "allow": [
+      "Read(*)",
+      "Edit(*)",
+      "Bash(ls *)",
+      "Bash(python3 tests/*)"
+    ]
+  },
+  "locks": {
+    "company_rules_only": true,
+    "disable_bypass": true
+  }
+}
